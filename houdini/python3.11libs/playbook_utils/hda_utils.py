@@ -1,6 +1,9 @@
 import hou
 import collections
 
+from playbook_utils import network
+from playbook_utils.network import ComfyDeployClient, GlobalRenderSettings, RetextureRenderSettings, StyleTransferRenderSettings, MaskData
+
 def add_mask(node: hou.Node):
     """Add a mask by updating the masks multiparm list on the node.
 
@@ -144,6 +147,12 @@ def get_render_data(node: hou.Node) -> dict:
     mask_prompts = []
     for i in range(number_of_masks):
         mask_prompts.append(node.evalParm(f"mask_prompt{i+1}"))
+    
+    # mask prompts should be a list of strings. The list should be of length 7. If it's not, pad it with empty strings
+    if len(mask_prompts) < 7:
+        mask_prompts = mask_prompts + [""] * (7 - len(mask_prompts))
+    
+    mask_colors = ["ffe906", "0589d6", "a2d4d5", "000016", "00ad58", "f084cf", "ee9e3e"]
 
     data = {
         "workflow": workflow,
@@ -153,7 +162,10 @@ def get_render_data(node: hou.Node) -> dict:
         "structure_strength": structure_strength,
         "number_of_masks": number_of_masks,
         "mask_prompts": mask_prompts,
+        "mask_colors": mask_colors
     }
+
+    
     return data
 
     
@@ -164,12 +176,49 @@ def render(node):
         node (hou.node): current HDA
     """
     print("Rendering...")
+    # TODO: Save the render passes
+
     # Get the render data from the HDA
     data = get_render_data(node)
     print(data)
 
-    # TODO: Save the render passes
+    # Create an instance of the ComfyDeployClient class
+    client = ComfyDeployClient()
 
-    # TODO: Send the render data to and render passes to playbook API
+    # TODO : What is the information I need to send?
+    client.save_image("test_mask", "mask")
+    client.save_image("test_depth", "depth")
+    client.save_image("test_outline", "outline")
+
+    # Create the required settings objects
+    global_settings = GlobalRenderSettings(
+        workflow=data["workflow"],
+        base_model=data["base_model"],
+        style=data["style"],
+        render_mode=0,
+    )
+
+    retexture_settings = RetextureRenderSettings(
+    prompt=data["scene_prompt"],
+    structure_strength=data["structure_strength"],
+    mask1=MaskData(prompt=data["mask_prompts"][0], color=data["mask_colors"][0]),
+    mask2=MaskData(prompt=data["mask_prompts"][1], color=data["mask_colors"][1]),
+    mask3=MaskData(prompt=data["mask_prompts"][2], color=data["mask_colors"][2]),
+    mask4=MaskData(prompt=data["mask_prompts"][3], color=data["mask_colors"][3]),
+    mask5=MaskData(prompt=data["mask_prompts"][4], color=data["mask_colors"][4]),
+    mask6=MaskData(prompt=data["mask_prompts"][5], color=data["mask_colors"][5]),
+    mask7=MaskData(prompt=data["mask_prompts"][6], color=data["mask_colors"][6]),
+)
+
+    style_transfer_settings = StyleTransferRenderSettings(
+        prompt = data["scene_prompt"],
+        style_transfer_strength=data["structure_strength"]
+    )
+
+    # Call the run_workflow function
+    result = client.run_workflow(global_settings, retexture_settings, style_transfer_settings)
+
+    # Process the result
+    print(result)
 
 

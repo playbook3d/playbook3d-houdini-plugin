@@ -3,20 +3,24 @@ import logging
 import os
 import requests
 import numpy as np
-from websockets.sync.client import connect
-from comfydeploy import ComfyDeploy
-from dotenv import load_dotenv
-from ..properties import prompt_placeholders
+import hou
+# from websockets.sync.client import connect
+# from comfydeploy import ComfyDeploy
+# from dotenv import load_dotenv
+# from playbook_utils import properties
 
+# prompt_placeholders = properties.prompt_placeholders
 workflow_dict = {"RETEXTURE": 0, "STYLETRANSFER": 1}
 base_model_dict = {"STABLE": 0, "FLUX": 1}
 style_dict = {"PHOTOREAL": 0, "3DCARTOON": 1, "ANIME": 2}
 
 
 def machine_id_status(machine_id: str):
-    client = ComfyDeploy(bearer_auth="")
+    # client = ComfyDeploy(bearer_auth="")
 
-    client.machines.get_v1_machines_machine_id_(machine_id=machine_id)
+    # client.machines.get_v1_machines_machine_id_(machine_id=machine_id)
+
+    pass
 
 
 class GlobalRenderSettings:
@@ -76,12 +80,12 @@ class ComfyDeployClient:
         self.style_transfer: bytes = b""
 
         # Determine the path to the .env file
-        env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+        # env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 
-        # Load the .env file
-        load_dotenv(dotenv_path=env_path)
+        # # Load the .env file
+        # load_dotenv(dotenv_path=env_path)
 
-        self.url = os.getenv("BASE_URL")
+        # self.url = os.getenv("BASE_URL")
 
     def get_workflow_id(self, workflow: int, base_model: int, style: int) -> int:
         # Format is '{workflow}_{base_model}_{style}'
@@ -114,6 +118,9 @@ class ComfyDeployClient:
         style_transfer_settings: StyleTransferRenderSettings,
     ) -> str:
 
+        print(f"self.mask: {self.mask}")
+        print(f"self.depth: {self.depth}")
+        print(f"self.outline: {self.outline}")
         if self.mask and self.depth and self.outline:
             # These are determined by UI selection:
             logging.info(f"Current workflow selection: {global_settings.workflow}")
@@ -266,23 +273,23 @@ class PlaybookWebsocket:
         self.base_url = os.getenv("BASE_URL")
         self.websocket = None
 
-    async def websocket_message(self) -> str:
-        try:
-            async with connect(self.base_url) as websocket:
-                self.websocket = websocket
+    # async def websocket_message(self) -> str:
+    #     try:
+    #         async with connect(self.base_url) as websocket:
+    #             self.websocket = websocket
 
-                while True:
-                    message = await websocket.recv()
-                    try:
-                        data = json.loads(message)
+    #             while True:
+    #                 message = await websocket.recv()
+    #                 try:
+    #                     data = json.loads(message)
 
-                        if data.get("status") == "success":
-                            extracted_data = data.get["data"]
-                            image_url = extracted_data.outputs[0].data.images[0].url
-                            return image_url
+    #                     if data.get("status") == "success":
+    #                         extracted_data = data.get["data"]
+    #                         image_url = extracted_data.outputs[0].data.images[0].url
+    #                         return image_url
 
-                    except json.JSONDecodeError:
-                        print("Error while parsing response from server", message)
+    #                 except json.JSONDecodeError:
+    #                     print("Error while parsing response from server", message)
 
-        except Exception as exception:
-            print(f"Error while parsing response from server: {exception}")
+    #     except Exception as exception:
+    #         print(f"Error while parsing response from server: {exception}")
