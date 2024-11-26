@@ -3,6 +3,8 @@ import collections
 
 from playbook_utils import network
 from playbook_utils.network import ComfyDeployClient, GlobalRenderSettings, RetextureRenderSettings, StyleTransferRenderSettings, MaskData
+from playbook_utils.authentication import get_user_info, validate_api_key
+
 
 def add_mask(node: hou.Node):
     """Add a mask by updating the masks multiparm list on the node.
@@ -19,6 +21,18 @@ def add_mask(node: hou.Node):
 
     new_num_masks = cur_num_masks + 1
     node.parm("masks").set(new_num_masks)
+
+
+def authenticate_user(node: hou.Node):
+    api_key = hou.getenv("PLAYBOOK_API_KEY")
+    if validate_api_key(api_key):
+        # Get user information
+        user_info = get_user_info(api_key)
+        if user_info:
+            email = user_info["email"]
+            node.parm("user_email").set(email)
+            credits = user_info["credits"]
+            node.parm("user_credits").set(credits)
 
 
 def clear_masks(node: hou.Node):
