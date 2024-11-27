@@ -4,6 +4,7 @@ import base64
 import requests
 from dotenv import load_dotenv
 from typing import Optional, Dict, Any
+from playbook_utils.secret_manager import HoudiniSecretsManager
 
 def decode_jwt(token: str) -> str:
     """Decode a JWT token to extract user information."""
@@ -23,18 +24,27 @@ def get_user_info(api_key: str) -> Optional[Dict[str, Any]]:
         Optional[Dict[str, Any]]: Dictionary containing user email and credits if successful,
                                 None if authentication fails
     """
-    # Determine the path to the .env file
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
-
-    # Load the .env file
-    load_dotenv(dotenv_path=env_path)
-
     try:
+        # Get URLs and API key from AWS Secrets Manager
+        secrets = HoudiniSecretsManager.get_secret()
+        
+        alias_url = secrets.get('ALIAS_URL')
+        user_url = secrets.get('USER_URL')
+        x_api_key = secrets.get('X_API_KEY')
+        
+        if not all([alias_url, user_url, x_api_key]):
+            print("Missing required configuration from AWS Secrets")
+            return None
+
         # Get access token using API key
-        alias_url = os.getenv("ALIAS_URL")
-        jwt_request = requests.get(alias_url + api_key)
+        token_url = f"{alias_url}{api_key}"
+        print(f"Requesting token from: {token_url}")
+        
+        jwt_request = requests.get(token_url)
+        
         if jwt_request.status_code != 200:
             print(f"Failed to get access token. Status code: {jwt_request.status_code}")
+            print(f"Response: {jwt_request.text}")
             return None
 
         access_token = jwt_request.json()["access_token"]
@@ -45,15 +55,18 @@ def get_user_info(api_key: str) -> Optional[Dict[str, Any]]:
         username = decoded_json["username"]
 
         # Get user information using username and access token
-        url = os.getenv("USER_URL").replace("*", username)
+        info_url = user_url.replace("*", username)
+        print(f"Requesting user info from: {info_url}")
+        
         headers = {
-            "authorization": access_token,
-            "x-api-key": os.getenv("X_API_KEY")
+            "Authorization": f"Bearer {access_token}",
+            "x-api-key": x_api_key
         }
         
-        user_request = requests.get(url=url, headers=headers)
+        user_request = requests.get(url=info_url, headers=headers)
         if user_request.status_code != 200:
             print(f"Failed to get user info. Status code: {user_request.status_code}")
+            print(f"Response: {user_request.text}")
             return None
 
         user_data = user_request.json()

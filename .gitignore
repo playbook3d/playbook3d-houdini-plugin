@@ -3,3 +3,16 @@ backup/
 
 # Ignore the pycache directory
 __pycache__/
+
+# Environment variables
+.env
+*.env
+.env.*
+
+# Python virtual environment
+venv/
+env/
+
+# IDE settings
+.vscode/
+.idea/

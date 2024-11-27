@@ -33,6 +33,8 @@ def authenticate_user(node: hou.Node):
             node.parm("user_email").set(email)
             credits = user_info["credits"]
             node.parm("user_credits").set(credits)
+    else:
+        hou.ui.displayMessage("Invalid API key. Please make sure the API key present in the package is valid.")
 
 
 def clear_masks(node: hou.Node):
