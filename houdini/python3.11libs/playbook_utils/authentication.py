@@ -70,6 +70,7 @@ def get_user_info(api_key: str) -> Optional[Dict[str, Any]]:
             return None
 
         user_data = user_request.json()
+        print(f"User info: {user_data}")
         return {
             "email": user_data["email"],
             "credits": user_data["users_tier"]["credits"]
@@ -78,6 +79,38 @@ def get_user_info(api_key: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         print(f"Authentication error: {str(e)}")
         return None
+
+
+def get_user_token() -> str:
+    """
+    Get the user token from Playbook3D web editor.
+    Returns:
+        str: The user token.
+    """
+    api_key = os.getenv("PLAYBOOK_API_KEY")
+
+    if not api_key:
+        raise ValueError("Playbook API key not found in environment variables")
+    
+    jwt_request = requests.get(f"{base_url}/token-wrapper/get-tokens/{api_key}")
+
+    try:
+        if jwt_request.status_code != 200:
+            raise ValueError(f"Failed to get token. Status code: {jwt_request.status_code}")
+    except Exception as e:
+        print(f"Error getting token: {e}")
+        raise ValueError("Failed to authenticate with API key")
+
+    return __parse_jwt_data__(jwt_request.json()["access_token"])  
+
+
+def load_dotenv() -> None:
+    """
+    Load the .env file.
+    """
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    load_dotenv(dotenv_path=env_path)
+    
 
 def validate_api_key(api_key: str) -> bool:
     """
