@@ -1,0 +1,20 @@
+{
+    "path": "$PLAYBOOK",
+    "load_package_once": true,
+    "version": "20.5",
+    "enable": true,
+    "env": [
+        {
+            "PLAYBOOK": "D:/work/playbook/playbook-houdini-plugin/houdini"
+        },
+        {
+            "PLAYBOOK_EMAIL": "prateekfxtd@gmail.com"
+        },
+        {
+            "PLAYBOOK_API_KEY": "beb60f7b-7a1d-4eaf-8800-a5169078b592"
+        },
+        {
+            "PLAYBOOK_VERSION": "0.1"
+        }
+    ]
+}
